@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0'; // Default to 0.0.0.0 for remote access
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Configuration
@@ -89,6 +90,11 @@ app.post('/api/login', async (req, res) => {
     });
   }
 
+  // Debug logging
+  console.log(`[Login] Attempting to authenticate user: ${username}`);
+  console.log(`[Login] Auth service URL: ${AUTH_SERVICE_URL}`);
+  console.log(`[Login] Backend server port: ${PORT}`);
+
   try {
     const response = await axios.post(`${AUTH_SERVICE_URL}/login`, {
       username,
@@ -126,9 +132,13 @@ app.post('/api/login', async (req, res) => {
     }
   } catch (error) {
     console.error('Login error:', error.message);
+    console.error('Auth service URL:', AUTH_SERVICE_URL);
+    console.error('Full error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error connecting to authentication service'
+      message: 'Error connecting to authentication service',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      authServiceUrl: AUTH_SERVICE_URL
     });
   }
 });
@@ -306,9 +316,36 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Check if auth service is reachable
+async function checkAuthService() {
+  try {
+    const response = await axios.get(`${AUTH_SERVICE_URL}/health`, {
+      timeout: 5000,
+      validateStatus: () => true
+    });
+    if (response.status === 200) {
+      console.log(`✓ Auth service is reachable at ${AUTH_SERVICE_URL}`);
+      return true;
+    } else {
+      console.warn(`⚠ Auth service at ${AUTH_SERVICE_URL} returned status ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.warn(`⚠ Cannot reach auth service at ${AUTH_SERVICE_URL}`);
+    console.warn(`  Error: ${error.message}`);
+    console.warn(`  Make sure the cookie manager is running on the expected port`);
+    return false;
+  }
+}
+
 // Initialize and start server
 async function start() {
   await ensureProtectedDir();
+  
+  // Check if auth service is reachable (non-blocking warning)
+  checkAuthService().catch(() => {
+    // Already logged in checkAuthService
+  });
   
   // Check if dist/index.html exists (production build)
   try {
@@ -336,9 +373,10 @@ async function start() {
     res.sendFile(indexPath);
   });
   
-  app.listen(PORT, () => {
-    const url = `http://localhost:${PORT}`;
-    console.log(`File Browser Server running on port ${PORT}`);
+  app.listen(PORT, HOST, () => {
+    const hostDisplay = HOST === '0.0.0.0' ? '0.0.0.0 (all interfaces)' : HOST;
+    const url = HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
+    console.log(`File Browser Server running on ${hostDisplay}:${PORT}`);
     console.log(`Environment: ${NODE_ENV}`);
     if (distExists) {
       console.log(`Serving Vue app from: ${distPath}`);

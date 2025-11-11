@@ -32,13 +32,39 @@ A web-based file browser for accessing protected files in the `node_access_contr
 
 The application can be configured using environment variables:
 
+### Backend Server (server.js)
 - `PORT`: Server port (default: 3001)
+- `HOST`: Server host/IP to bind to (default: 0.0.0.0 for remote access, use localhost for local-only)
 - `AUTH_SERVICE_URL`: URL of the cookie session manager service (default: http://localhost:3000)
 - `PROTECTED_DIR`: Path to the protected directory (default: ../../node_access_control)
 
-Example:
+### Vite Dev Server (vite.config.js)
+- `VITE_PORT` or `PORT`: Vite dev server port (default: 5173)
+- `VITE_HOST` or `HOST`: Vite dev server host (default: 0.0.0.0 for remote access)
+- `VITE_API_URL` or `API_URL`: Backend API server URL for proxy (default: http://localhost:3001)
+- `VITE_OPEN`: Whether to open browser automatically (default: true, set to 'false' to disable)
+
+### Examples
+
+**Local development:**
 ```bash
-PORT=3001 AUTH_SERVICE_URL=http://localhost:3000 PROTECTED_DIR=/path/to/protected npm start
+PORT=3001 AUTH_SERVICE_URL=http://localhost:3000 npm start
+```
+
+**Remote development (on remote machine):**
+```bash
+# Set the auth service URL to the remote cookie manager
+AUTH_SERVICE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3001 npm run serve
+```
+
+**Remote development with custom host/port:**
+```bash
+# If cookie manager is on a different machine, use its IP/hostname
+AUTH_SERVICE_URL=http://192.168.1.100:3000 \
+VITE_API_URL=http://localhost:3001 \
+VITE_HOST=0.0.0.0 \
+VITE_PORT=5173 \
+npm run serve
 ```
 
 ## Running the Application
@@ -62,6 +88,8 @@ npm run dev
 This starts the Vite dev server on port 5173 with hot reload.
 
 Then visit: **http://localhost:5173** (Vite dev server proxies API requests to the backend)
+
+**Note:** By default, both servers bind to `0.0.0.0`, making them accessible from remote machines. If running on a remote server, you can access the app via `http://<remote-ip>:5173`.
 
 ### Production Mode
 
@@ -173,11 +201,42 @@ file-browser/
 └── public/             # Static assets (fallback)
 ```
 
+## Remote Development
+
+When developing on a remote machine where both the Vue.js app and cookie manager are running:
+
+1. **Ensure both services are accessible:**
+   - The cookie manager should be running on the remote machine (default: port 3000)
+   - The file-browser backend should be running on the remote machine (default: port 3001)
+   - The Vite dev server will run on the remote machine (default: port 5173)
+
+2. **Set environment variables:**
+   ```bash
+   # If cookie manager is on the same remote machine
+   AUTH_SERVICE_URL=http://localhost:3000 npm run serve
+   
+   # If cookie manager is on a different machine
+   AUTH_SERVICE_URL=http://<cookie-manager-ip>:3000 npm run serve
+   ```
+
+3. **Access from your local browser:**
+   - Connect to the remote machine via SSH with port forwarding, or
+   - Access directly via `http://<remote-ip>:5173` if the remote machine's firewall allows it
+
+4. **SSH Port Forwarding Example:**
+   ```bash
+   # Forward Vite dev server port
+   ssh -L 5173:localhost:5173 user@remote-machine
+   
+   # Then access via http://localhost:5173 in your local browser
+   ```
+
 ## Troubleshooting
 
 ### Cannot connect to authentication service
 - Ensure the cookie session manager is running on port 3000
 - Check the `AUTH_SERVICE_URL` environment variable
+- If running on remote machine, ensure `AUTH_SERVICE_URL` points to the correct host (use `localhost` if on same machine, or the actual IP/hostname if different)
 
 ### Files not showing
 - Verify the `PROTECTED_DIR` path is correct

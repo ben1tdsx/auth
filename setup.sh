@@ -129,12 +129,72 @@ if [ ! -f "index.js" ]; then
     exit 1
 fi
 
+# Install dependencies for file-browser Vue.js subproject
+echo ""
+echo -e "${YELLOW}Installing dependencies for file-browser Vue.js project...${NC}"
+
+FILE_BROWSER_DIR="subprojects/file-browser"
+
+if [ -d "$FILE_BROWSER_DIR" ]; then
+    if [ -f "$FILE_BROWSER_DIR/package.json" ]; then
+        echo "Navigating to $FILE_BROWSER_DIR..."
+        cd "$FILE_BROWSER_DIR"
+        
+        if [ "$USE_YARN" = true ]; then
+            echo "Using yarn to install file-browser dependencies..."
+            if yarn install; then
+                echo -e "${GREEN}✓ File-browser dependencies installed successfully with yarn${NC}"
+            else
+                echo -e "${RED}Error: yarn install failed for file-browser.${NC}"
+                cd ../..
+                exit 1
+            fi
+        else
+            echo "Using npm to install file-browser dependencies..."
+            if npm install; then
+                echo -e "${GREEN}✓ File-browser dependencies installed successfully with npm${NC}"
+            else
+                echo -e "${YELLOW}npm install failed, trying yarn as fallback...${NC}"
+                if command -v yarn &> /dev/null; then
+                    if yarn install; then
+                        echo -e "${GREEN}✓ File-browser dependencies installed successfully with yarn${NC}"
+                    else
+                        echo -e "${RED}Error: Both npm and yarn installation failed for file-browser.${NC}"
+                        cd ../..
+                        exit 1
+                    fi
+                else
+                    echo -e "${RED}Error: npm install failed and yarn is not available.${NC}"
+                    cd ../..
+                    exit 1
+                fi
+            fi
+        fi
+        
+        # Verify Vue.js and Vite installation
+        echo ""
+        echo -e "${YELLOW}Verifying file-browser installation...${NC}"
+        if [ -d "node_modules" ] && [ -d "node_modules/vue" ] && [ -d "node_modules/vite" ]; then
+            echo -e "${GREEN}✓ Vue.js and Vite dependencies verified${NC}"
+        else
+            echo -e "${RED}Warning: Some file-browser dependencies may be missing.${NC}"
+        fi
+        
+        # Return to project root
+        cd ../..
+    else
+        echo -e "${YELLOW}Warning: package.json not found in $FILE_BROWSER_DIR${NC}"
+    fi
+else
+    echo -e "${YELLOW}Warning: $FILE_BROWSER_DIR directory not found. Skipping file-browser setup.${NC}"
+fi
+
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "To start the service, run:"
+echo "To start the main service, run:"
 echo -e "  ${YELLOW}npm start${NC}"
 echo ""
 echo "Or for development with auto-reload:"
@@ -149,5 +209,17 @@ echo "  - Health check: http://localhost:3000/health"
 echo "  - Login: http://localhost:3000/login"
 echo "  - Protected: http://localhost:3000/protected"
 echo "  - Auth validation: http://localhost:3000/auth/validate"
+echo ""
+echo "To start the file-browser Vue.js app:"
+echo -e "  ${YELLOW}cd subprojects/file-browser${NC}"
+echo -e "  ${YELLOW}npm start${NC}  # Production mode (serves on port 3001)"
+echo ""
+echo "Or for development mode (with hot reload):"
+echo -e "  ${YELLOW}cd subprojects/file-browser${NC}"
+echo -e "  ${YELLOW}npm run dev:full${NC}  # Runs both backend and Vite dev server"
+echo ""
+echo "File-browser will be available at:"
+echo "  - Development: http://localhost:5173 (Vite dev server)"
+echo "  - Production: http://localhost:3001"
 echo ""
 
