@@ -1,0 +1,36 @@
+{
+  "name": "file-browser",
+  "version": "1.0.0",
+  "description": "Web UI for logging in and browsing protected files in node_access_control",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "serve": "vite",
+    "dev:full": "concurrently --names \"backend,vite\" --prefix-colors \"blue,green\" \"npm run server\" \"npm run dev\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "server": "nodemon server.js"
+  },
+  "keywords": [
+    "file-browser",
+    "login",
+    "cookie-session"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.0.1",
+    "vite": "^5.0.0"
+  }
+}

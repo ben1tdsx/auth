@@ -1,0 +1,163 @@
+# Nginx Configuration Example for Cookie-Based Access Control
+# This configuration protects the /node_access_control/ folder using
+# the Node.js session cookie validation service
+
+# Upstream server for the Node.js application
+upstream nodejs_app {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    
+    # Root directory for serving files
+    root /var/www/html;
+    index index.html;
+    
+    # Logging
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    
+    # Location block for the protected folder
+    # All requests to /node_access_control/ will be validated
+    # by the Node.js authentication service
+    location /node_access_control/ {
+        # Internal directive prevents external access without auth
+        internal;
+        
+        # Forward authentication request to Node.js app
+        # The auth_request module will send a subrequest to /auth/validate
+        # and only proceed if it returns 200 OK
+        auth_request /auth/validate;
+        
+        # Pass the original request URI to the auth endpoint
+        auth_request_set $auth_status $upstream_status;
+        
+        # Pass cookies from the original request to the auth endpoint
+        auth_request_set $auth_cookie $upstream_http_set_cookie;
+        
+        # Set the cookie if the auth endpoint sets one
+        add_header Set-Cookie $auth_cookie if=$auth_cookie;
+        
+        # Proxy to the Node.js app for file serving (if needed)
+        # Or serve files directly from the filesystem
+        alias /var/www/html/node_access_control/;
+        
+        # Enable directory listing (optional)
+        # autoindex on;
+        
+        # Support for HTTP Range requests (important for video/large files)
+        # This allows clients to request specific byte ranges
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        
+        # Pass Range header for video streaming and large file downloads
+        proxy_set_header Range $http_range;
+        proxy_set_header If-Range $http_if_range;
+        
+        # Increase timeouts for large file transfers
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        
+        # Support for Range requests when serving files directly
+        # Nginx will automatically handle Range requests for static files
+        # when using alias or root directives
+        
+        # Security headers
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        
+        # CORS headers (adjust as needed)
+        # add_header Access-Control-Allow-Origin "*" always;
+        # add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+    }
+    
+    # Internal location for authentication validation
+    # This endpoint is called by auth_request module
+    location = /auth/validate {
+        internal;
+        
+        # Proxy to Node.js authentication service
+        proxy_pass http://nodejs_app/auth/validate;
+        
+        # Pass original request headers (especially cookies)
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Original-Method $request_method;
+        
+        # Forward cookies from the original request
+        proxy_set_header Cookie $http_cookie;
+        
+        # Don't cache auth responses
+        proxy_cache_bypass 1;
+        proxy_no_cache 1;
+    }
+    
+    # Public endpoints (login, logout, health check)
+    # These should be accessible without authentication
+    location ~ ^/(login|logout|health|auth/validate)$ {
+        proxy_pass http://nodejs_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # Forward cookies
+        proxy_set_header Cookie $http_cookie;
+    }
+    
+    # Default location for other requests
+    location / {
+        try_files $uri $uri/ =404;
+    }
+    
+    # Error pages
+    error_page 401 /401.html;
+    error_page 403 /403.html;
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    
+    location = /401.html {
+        root /var/www/html;
+        internal;
+    }
+    
+    location = /403.html {
+        root /var/www/html;
+        internal;
+    }
+}
+
+# HTTPS Configuration (recommended for production)
+# Uncomment and configure SSL certificates for production use
+#
+# server {
+#     listen 443 ssl http2;
+#     server_name example.com;
+#     
+#     ssl_certificate /path/to/certificate.crt;
+#     ssl_certificate_key /path/to/private.key;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     
+#     # Include the same location blocks as above
+#     # ...
+# }
+#
+# # Redirect HTTP to HTTPS
+# server {
+#     listen 80;
+#     server_name example.com;
+#     return 301 https://$server_name$request_uri;
+# }
+

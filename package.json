@@ -1,0 +1,26 @@
+{
+  "name": "node-cookie-session-manager",
+  "version": "1.0.0",
+  "description": "Cookie-based session management for HTTP requests with Express.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "express",
+    "cookies",
+    "session",
+    "authentication"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cookie-parser": "^1.4.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

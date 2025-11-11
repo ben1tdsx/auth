@@ -1,0 +1,43 @@
+# Cursor Rules
+
+## File Edit Restrictions
+
+**DO NOT edit the following file types directly - they are managed by IDEs and can be corrupted:**
+
+- `.storyboard` files - Use Xcode Interface Builder
+- `.xcodeproj` files - Use Xcode project editor
+- `.xcworkspace` files - Use Xcode workspace editor
+- `.lproj` files - Use Xcode localization editor
+- `.pbxproj` files - Use Xcode project editor
+- `.xcscheme` files - Use Xcode scheme editor
+- `.xcuserdata` files - User-specific Xcode data
+
+**If you need to modify these files, instruct the user to make changes in the appropriate IDE (Xcode, etc.) instead of editing them directly.**
+
+## Safe File Types to Edit
+
+You may edit these file types directly:
+- `.h`, `.m` (Objective-C source files)
+- `.swift` (Swift source files)
+- `.js`, `.ts` (JavaScript/TypeScript)
+- `.json` (JSON configuration files)
+- `.md` (Markdown documentation)
+- `.html`, `.css` (Web files)
+- `.sh` (Shell scripts)
+- `.conf`, `.config` (Configuration files)
+- `.txt` (Text files)
+- `.py`, `.rb`, etc. (Other source files)
+
+## Apple TV Development Guidelines
+
+If working with Apple TV (tvOS) applications:
+- Use UIAlertController for text input on tvOS (UITextField doesn't work properly)
+- Always use gesture recognizers for text field interaction
+- Never edit `.storyboard` files directly - use Xcode Interface Builder
+
+## General Guidelines
+
+- Always ask before editing IDE-managed files
+- Prefer source code files (`.h`, `.m`, `.swift`, `.js`, etc.)
+- When in doubt, suggest using the appropriate IDE tool
+
