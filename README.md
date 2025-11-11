@@ -30,6 +30,12 @@ node_cookies/
 
 ## Installation
 
+> **Quick Setup on Ubuntu**: For Ubuntu users, you can use the automated setup script instead of manual installation:
+> ```bash
+> ./setup.sh
+> ```
+> This script will check prerequisites, install dependencies, and verify the installation. After running it, you can start the service with `npm start`.
+
 1. Clone or navigate to the project directory:
 ```bash
 cd node_cookies
